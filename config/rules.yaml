@@ -1,0 +1,150 @@
+# ============================================================
+# TAKE PROFIT TRADER — PROP FIRM RULES CONFIGURATION
+# ============================================================
+# IMPORTANT: All values below MUST be manually verified against
+# Take Profit Trader's official dashboard, help center, and
+# account agreement before enabling live trading.
+# Rules change periodically. Last known review: 2025-01.
+# Official source: https://takeprofittrader.com
+#
+# DO NOT rely solely on these defaults. TPT may update their
+# rules at any time. Always check your account-specific rules.
+# ============================================================
+
+account:
+  # Account size in USD — verify in your TPT dashboard
+  account_size: 50000
+
+  # Allowed futures instruments ONLY — do not add others without verifying
+  # ES = E-mini S&P 500 (CME), NQ = E-mini Nasdaq-100 (CME)
+  allowed_symbols:
+    - ES
+    - NQ
+
+  # Maximum contracts per instrument at any one time
+  # TPT $50k evaluation: typically 10 contracts — VERIFY IN YOUR DASHBOARD
+  max_contracts_per_symbol: 10
+
+  # Maximum total open positions across all instruments simultaneously
+  max_open_positions: 2
+
+trading_hours:
+  # Permitted trading window in US/Eastern time (24-hour format)
+  # VERIFY with TPT — hours may differ by account type and evaluation phase
+  # Default: regular NYSE/CME session
+  permitted_start: "09:30"
+  permitted_end:   "16:00"
+
+  # Set to true ONLY if TPT explicitly permits pre-market trading for your account
+  allow_premarket: false
+
+  # Set to true ONLY if TPT explicitly permits overnight/Globex trading for your account
+  allow_overnight: false
+
+  # Minutes before permitted_end to stop accepting NEW entries
+  # Existing positions are flattened at permitted_end by the EOD job
+  eod_cutoff_minutes: 15
+
+drawdown:
+  # Trailing drawdown limit in USD (tracked from highest equity watermark)
+  # TPT $50k evaluation: typically $2,000 trailing drawdown — VERIFY THIS
+  # If your account goes below (peak_equity - this limit), bot halts and flattens
+  eod_trailing_drawdown_limit: 2000
+
+  # Maximum daily loss limit in USD
+  # Set to null if TPT does not enforce a separate daily loss limit for your account
+  # TPT $50k evaluation: no separate daily loss limit as of last check — VERIFY
+  daily_loss_limit: null
+
+  # Bot stops accepting new trades when remaining drawdown buffer falls below this
+  # This is a SAFETY CUSHION above the hard TPT limit to prevent accidental breach
+  # Example: if trailing limit is $2000 and buffer is $500, bot stops at $1500 remaining
+  drawdown_safety_buffer: 500
+
+profit_target:
+  # Total profit target to PASS the evaluation (account-level cumulative)
+  # TPT $50k evaluation: typically $3,000 — VERIFY IN YOUR DASHBOARD
+  evaluation_profit_target: 3000
+
+  # Daily profit target: bot stops trading for the day once this is reached
+  # Conservative default to protect gains; set higher if desired
+  daily_profit_target: 600
+
+  # Stop trading once account equity reaches this absolute level above starting balance
+  # Set to null to disable (rely on daily_profit_target instead)
+  account_profit_stop: null
+
+risk:
+  # Risk per trade as a fraction of account size
+  # 0.0025 = 0.25% of $50,000 = $125 max risk per trade (conservative)
+  risk_pct_per_trade: 0.0025
+
+  # Hard cap on single-trade risk — cannot exceed this regardless of position size calc
+  # 0.005 = 0.5% of $50,000 = $250
+  max_risk_pct_per_trade: 0.005
+
+  # Maximum cumulative risk committed across all open/pending trades for the day
+  # 0.01 = 1% of $50,000 = $500
+  max_daily_risk_pct: 0.01
+
+  # Minimum required risk-to-reward ratio to enter a trade
+  # Trades with R:R below this are automatically blocked
+  min_risk_reward_ratio: 2.0
+
+  # Minimum AI signal confidence score (0–100) required to enter a trade
+  # Lower = more trades but lower quality; higher = fewer but higher quality
+  min_confidence_score: 65
+
+  # ATR multiplier for stop loss distance from entry
+  # stop_distance = ATR(14) * atr_stop_multiplier
+  atr_stop_multiplier: 1.5
+
+  # ATR multiplier for take profit distance from entry
+  # take_profit_distance = ATR(14) * atr_tp_multiplier
+  atr_tp_multiplier: 3.0
+
+position_management:
+  # Halt all trading for the day after this many consecutive losing trades
+  # Protects against revenge trading and drawdown spirals
+  max_consecutive_losses: 2
+
+  # Maximum number of completed trades (wins + losses) allowed per trading day
+  max_trades_per_day: 6
+
+  # The following are HARDCODED OFF in the bot — this section is for documentation only
+  # DO NOT set these to true — the bot ignores these flags and always treats them as false
+  martingale_enabled: false       # HARDCODED OFF — never change
+  grid_enabled: false             # HARDCODED OFF — never change
+  averaging_down_enabled: false   # HARDCODED OFF — never change
+
+restrictions:
+  # Block new trades during scheduled high-impact economic news events
+  # Requires a news calendar feed (see README for setup)
+  block_during_news: true
+
+  # Blackout window in minutes before and after a high-impact news event
+  news_blackout_minutes: 5
+
+  # Minimum minutes that must elapse after a losing trade before a new entry is allowed
+  # Prevents emotional/revenge trading immediately after a loss
+  min_minutes_after_loss: 5
+
+live_trading:
+  # ============================================================
+  # SAFETY GATE 2 OF 2 (Gate 1 = ENABLE_LIVE_TRADING env var)
+  # Set to true ONLY after ALL of the following conditions are met:
+  #   1. Every rule above has been manually verified with TPT dashboard
+  #   2. ENABLE_LIVE_TRADING=true is set in your .env file
+  #   3. Valid Tradovate API credentials are configured in .env
+  #   4. Paper trading has been running without issues for >= 5 days
+  #   5. You have read and accepted full responsibility for live trading
+  # BOTH this flag AND the env var must be true for live trading to activate
+  # ============================================================
+  live_trading_confirmed: false
+
+  # Broker adapter for live trading: "tradovate" (only supported option)
+  live_broker: "tradovate"
+
+  # Force manual re-confirmation in config on every bot restart
+  # Prevents accidentally enabling live trading after a reboot
+  require_confirmation_on_restart: true
